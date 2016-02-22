@@ -1,12 +1,14 @@
 (message "Loading amidvidy personal config")
 
 (menu-bar-mode -1)
-(semantic-mode 1)
 (projectile-global-mode)
 
 (setq-default c-basic-offset 4)
 (setq-default c-indent-tabs-mode nil)
 (setq-default c-indent-level 4)
+
+;;; 100 character columns
+(setq whitespace-line-column 100)
 
 (set-face-attribute 'default nil
                     :family "Inconsolata" :height 150 :weight 'normal)
@@ -37,14 +39,22 @@
 (add-hook 'c++-mode-hook 'helm-gtags-mode)
 (add-hook 'c-mode-hook 'helm-gtags-mode)
 
+(require 'yasnippet)
+(add-hook 'c++-mode-hook #'yas-minor-mode)
+
+(require 'flycheck)
+(add-hook 'c++-mode-hook #'flycheck-mode)
+
 (define-key prelude-mode-map "\C-cg" nil)
 
 (global-set-key (kbd "C-c h") 'helm-mini)
 (global-set-key (kbd "C-c g") 'helm-projectile-ag)
 (global-set-key (kbd "C-c l") 'helm-projectile-find-file)
-(global-set-key (kbd "C-c i") 'helm-semantic)
 (global-set-key (kbd "C-c c") 'compile)
 (global-set-key (kbd "C-c r") 'helm-register)
+(global-set-key (kbd "C-c q") 'helm-flycheck)
+(global-set-key (kbd "C-c t") 'helm-resume)
+(global-set-key (kbd "C-c z") 'helm-swoop)
 
 ; helm gtags
 (define-key helm-gtags-mode-map (kbd "C-c m") 'helm-gtags-tags-in-this-function)
@@ -90,14 +100,15 @@
                     (select-window first-win)
                       (if this-win-2nd (other-window 1))))))
 
-(setq paradox-github-token "73208d188fa6ee9b34eade4975b4cd2710a50fea")
-
 (global-company-mode 1)
 
 (add-hook 'after-init-hook 'global-company-mode)
 (add-hook 'c++-mode-hook 'irony-mode)
 (add-hook 'c-mode-hook 'irony-mode)
 (add-hook 'objc-mode-hook 'irony-mode)
+
+(add-hook 'c++-mode-hook
+  (lambda () (add-hook 'before-save-hook #'clang-format-buffer nil t)))
 
 ;; replace the `completion-at-point' and `complete-symbol' bindings in
 ;; irony-mode's buffers by irony-mode's function
@@ -117,3 +128,13 @@
 ;; trigger completion at interesting places, such as after scope operator
 ;;     std::|
 (add-hook 'irony-mode-hook 'company-irony-setup-begin-commands)
+
+(eval-after-load 'flycheck
+  '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
+
+(eval-after-load 'company
+  '(progn
+     (define-key company-mode-map (kbd "C-c :") 'helm-company)
+     (define-key company-active-map (kbd "C-c :") 'helm-company)))
+
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
